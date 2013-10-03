@@ -1,5 +1,7 @@
 package com.shzhangji.micro_scheduler;
 
+import java.util.concurrent.Callable;
+
 public class App {
 
     public static void main(String[] args) throws Exception {
@@ -14,7 +16,7 @@ public class App {
 
     }
 
-    public static class SqlTask implements Runnable {
+    public static class SqlTask implements Callable<Void> {
 
         private String sql;
 
@@ -23,11 +25,12 @@ public class App {
         }
 
         @Override
-        public void run() {
+        public Void call() throws Exception {
             System.out.println("Processing sql \"" + sql + "\"...");
             try {
                 Thread.sleep(2000);
             } catch (InterruptedException e) {}
+            return null;
         }
 
     }

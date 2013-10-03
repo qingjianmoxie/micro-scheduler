@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -12,9 +13,9 @@ public class Topology {
 
     private ExecutorService executor = Executors.newCachedThreadPool();
     private Map<String, Node> nodeMap = new HashMap<String, Node>();
-    private Future<?> future;
+    private Future<Void> future;
 
-    public void addNode(String name, Runnable runnable, String... predecessorNames) {
+    public void addNode(String name, Callable<Void> callable, String... predecessorNames) {
 
         if (nodeMap.containsKey(name)) {
             throw new IllegalArgumentException("Node name exsits.");
@@ -29,7 +30,7 @@ public class Topology {
             predecessors.add(predecessor);
         }
 
-        nodeMap.put(name, new Node(runnable, executor, predecessors.toArray(new Node[0])));
+        nodeMap.put(name, new Node(callable, executor, predecessors.toArray(new Node[0])));
     }
 
     public void start() {
@@ -38,18 +39,18 @@ public class Topology {
             return;
         }
 
-        future = executor.submit(new Runnable() {
+        future = executor.submit(new Callable<Void>() {
 
             @Override
-            public void run() {
+            public Void call() throws Exception {
 
                 while (!Thread.interrupted()) {
 
                     boolean isDone = true;
                     for (Node node : nodeMap.values()) {
-                        node.tryStart();
                         if (!node.isDone()) {
                             isDone = false;
+                            node.tryStart();
                         }
                     }
 
@@ -62,6 +63,7 @@ public class Topology {
                     } catch (InterruptedException e) {}
                 }
 
+                return null;
             }
 
         });
