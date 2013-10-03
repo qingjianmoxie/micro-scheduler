@@ -1,9 +1,17 @@
 package com.shzhangji.micro_scheduler;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+
+import com.google.common.util.concurrent.AsyncFunction;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 
 public class App {
 
@@ -11,6 +19,7 @@ public class App {
         methodA();
         methodB();
         methodC();
+        methodD();
     }
 
     /**
@@ -52,6 +61,35 @@ public class App {
         container.addTask("C", new SqlTask("C"));
         container.addTask("D", new SqlTask("D"), "B", "C").get();
         container.shutdown();
+    }
+
+    @SuppressWarnings("unchecked")
+    public static void methodD() throws Exception {
+        ListeningExecutorService executor = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool());
+        ListenableFuture<Void> futureA = newTask(new SqlTask("A"), executor);
+        ListenableFuture<Void> futureB = newTask(new SqlTask("B"), executor, futureA);
+        ListenableFuture<Void> futureC = newTask(new SqlTask("C"), executor);
+        ListenableFuture<Void> futureD = newTask(new SqlTask("D"), executor, futureB, futureC);
+        futureD.get();
+        executor.shutdown();
+    }
+
+    private static <T> ListenableFuture<T> newTask(final Callable<T> callable, final ListeningExecutorService executor,
+            ListenableFuture<T>... predecessors) {
+
+        if (predecessors.length > 0) {
+            return Futures.transform(Futures.allAsList(Arrays.asList(predecessors)), new AsyncFunction<List<T>, T>() {
+
+                @Override
+                public ListenableFuture<T> apply(List<T> input)
+                        throws Exception {
+                    return executor.submit(callable);
+                }
+
+            }, executor);
+        } else {
+            return executor.submit(callable);
+        }
     }
 
     public static class SqlTask implements Callable<Void> {
