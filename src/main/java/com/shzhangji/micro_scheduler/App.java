@@ -1,48 +1,57 @@
 package com.shzhangji.micro_scheduler;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import com.google.common.util.concurrent.AsyncFunction;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
+import java.util.concurrent.Future;
 
 public class App {
 
     public static void main(String[] args) throws Exception {
+        methodA();
+        methodB();
+        methodC();
+    }
 
-        final ListeningExecutorService executor = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool());
-
-        ListenableFuture<Void> futureA = executor.submit(new SqlTask("A"));
-        ListenableFuture<Void> futureB = Futures.transform(futureA, new AsyncFunction<Void, Void>() {
-
-            @Override
-            public ListenableFuture<Void> apply(Void input) throws Exception {
-                return executor.submit(new SqlTask("B"));
-            }
-
-        }, executor);
-        ListenableFuture<Void> futureC = executor.submit(new SqlTask("C"));
-
-        List<ListenableFuture<Void>> futureBC = new ArrayList<ListenableFuture<Void>>();
-        futureBC.add(futureB);
-        futureBC.add(futureC);
-        ListenableFuture<Void> futureD = Futures.transform(Futures.allAsList(futureBC), new AsyncFunction<List<Void>, Void>() {
-
-            @Override
-            public ListenableFuture<Void> apply(List<Void> input)
-                    throws Exception {
-                return executor.submit(new SqlTask("D"));
-            }
-
-        }, executor);
+    /**
+     * Manual scheduling
+     */
+    public static void methodA() throws Exception {
+        ExecutorService executor = Executors.newCachedThreadPool();
+        Future<Void> futureA = executor.submit(new SqlTask("A"));
+        Future<Void> futureC = executor.submit(new SqlTask("C"));
+        futureA.get();
+        Future<Void> futureB = executor.submit(new SqlTask("B"));
+        futureB.get();
+        futureC.get();
+        Future<Void> futureD = executor.submit(new SqlTask("D"));
         futureD.get();
         executor.shutdown();
+    }
 
+    /**
+     * Iterate all nodes every 100ms
+     */
+    public static void methodB() throws Exception {
+        Topology topology = new Topology();
+        topology.addNode("A", new SqlTask("A"));
+        topology.addNode("B", new SqlTask("B"), "A");
+        topology.addNode("C", new SqlTask("C"));
+        topology.addNode("D", new SqlTask("D"), "B", "C");
+        topology.start();
+        topology.waitForCompletion();
+    }
+
+    /**
+     * Use Guava's ListenableFuture
+     */
+    public static void methodC() throws Exception {
+        Container<Void> container = new Container<Void>();
+        container.addTask("A", new SqlTask("A"));
+        container.addTask("B", new SqlTask("B"), "A");
+        container.addTask("C", new SqlTask("C"));
+        container.addTask("D", new SqlTask("D"), "B", "C").get();
+        container.shutdown();
     }
 
     public static class SqlTask implements Callable<Void> {
@@ -63,4 +72,5 @@ public class App {
         }
 
     }
+
 }
