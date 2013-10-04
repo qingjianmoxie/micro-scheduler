@@ -42,13 +42,12 @@ public class App {
      * Iterate all nodes every 100ms
      */
     public static void methodB() throws Exception {
-        Topology topology = new Topology();
+        Topology<Void> topology = new Topology<Void>();
         topology.addNode("A", new SqlTask("A"));
         topology.addNode("B", new SqlTask("B"), "A");
         topology.addNode("C", new SqlTask("C"));
         topology.addNode("D", new SqlTask("D"), "B", "C");
-        topology.start();
-        topology.waitForCompletion();
+        topology.run();
     }
 
     /**
@@ -103,9 +102,7 @@ public class App {
         @Override
         public Void call() throws Exception {
             System.out.println("Processing sql \"" + sql + "\"...");
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {}
+            Thread.sleep(2000);
             return null;
         }
 

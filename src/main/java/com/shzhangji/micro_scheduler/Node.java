@@ -6,17 +6,17 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-public class Node {
+public class Node<T> {
 
-    private Callable<Void> callable;
+    private Callable<T> callable;
     private ExecutorService executor;
-    private List<Node> predecessors = new ArrayList<Node>();
-    private Future<Void> future;
+    private List<Node<T>> predecessors = new ArrayList<Node<T>>();
+    private Future<T> future;
 
-    public Node(Callable<Void> callable, ExecutorService executor, Node... predecessors) {
+    public Node(Callable<T> callable, ExecutorService executor, List<Node<T>> predecessors) {
         this.callable = callable;
         this.executor = executor;
-        for (Node predecessor : predecessors) {
+        for (Node<T> predecessor : predecessors) {
             this.predecessors.add(predecessor);
         }
     }
@@ -28,7 +28,7 @@ public class Node {
         }
 
         boolean isReady = true;
-        for (Node predecessor : predecessors) {
+        for (Node<T> predecessor : predecessors) {
             if (!predecessor.isDone()) {
                 isReady = false;
                 break;
@@ -46,7 +46,7 @@ public class Node {
         return future != null && future.isDone();
     }
 
-    public Void get() throws Exception {
+    public T get() throws Exception {
         return future.get();
     }
 

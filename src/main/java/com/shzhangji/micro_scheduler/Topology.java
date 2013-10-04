@@ -7,71 +7,54 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
-public class Topology {
+public class Topology<T> {
 
     private ExecutorService executor = Executors.newCachedThreadPool();
-    private Map<String, Node> nodeMap = new HashMap<String, Node>();
-    private Future<Void> future;
+    private Map<String, Node<T>> nodeMap = new HashMap<String, Node<T>>();
 
-    public void addNode(String name, Callable<Void> callable, String... predecessorNames) {
+    public void addNode(String name, Callable<T> callable, String... predecessorNames) {
 
         if (nodeMap.containsKey(name)) {
             throw new IllegalArgumentException("Node name exsits.");
         }
 
-        List<Node> predecessors = new ArrayList<Node>();
+        List<Node<T>> predecessors = new ArrayList<Node<T>>();
         for (String predecessorName : predecessorNames) {
-            Node predecessor = nodeMap.get(predecessorName);
+            Node<T> predecessor = nodeMap.get(predecessorName);
             if (predecessor == null) {
                 throw new IllegalArgumentException("Predecessor node doesn't exist.");
             }
             predecessors.add(predecessor);
         }
 
-        nodeMap.put(name, new Node(callable, executor, predecessors.toArray(new Node[0])));
+        nodeMap.put(name, new Node<T>(callable, executor, predecessors));
     }
 
-    public void start() {
+    public void run() throws Exception {
 
-        if (future != null) {
-            return;
-        }
+        try {
 
-        future = executor.submit(new Callable<Void>() {
+            while (!Thread.interrupted()) {
 
-            @Override
-            public Void call() throws Exception {
-
-                while (!Thread.interrupted()) {
-
-                    boolean isDone = true;
-                    for (Node node : nodeMap.values()) {
-                        if (!node.isDone()) {
-                            isDone = false;
-                            node.tryStart();
-                        }
+                boolean isDone = true;
+                for (Node<T> node : nodeMap.values()) {
+                    if (!node.isDone()) {
+                        isDone = false;
+                        node.tryStart();
                     }
-
-                    if (isDone) {
-                        break;
-                    }
-
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {}
                 }
 
-                return null;
+                if (isDone) {
+                    break;
+                }
+
+                Thread.sleep(100);
             }
 
-        });
-    }
-
-    public void waitForCompletion() throws Exception {
-        future.get();
-        executor.shutdown();
+        } finally {
+            executor.shutdown();
+        }
     }
 
 }
