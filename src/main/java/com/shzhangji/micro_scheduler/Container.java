@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
@@ -16,7 +17,8 @@ import com.google.common.util.concurrent.MoreExecutors;
 
 public class Container<T> {
 
-    private ListeningExecutorService executor = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool());
+    private ListeningExecutorService executor = MoreExecutors.listeningDecorator(
+            MoreExecutors.getExitingExecutorService((ThreadPoolExecutor) Executors.newCachedThreadPool()));
     private Map<String, ListenableFuture<T>> futureMap = new HashMap<String, ListenableFuture<T>>();
 
     public Future<T> addTask(String name, final Callable<T> callable, String... predecessorNames) {
@@ -49,10 +51,6 @@ public class Container<T> {
         }
         futureMap.put(name, future);
         return future;
-    }
-
-    public void shutdown() {
-        executor.shutdown();
     }
 
 }
