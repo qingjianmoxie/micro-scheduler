@@ -85,7 +85,7 @@ public class App {
     public static void methodE() throws Exception {
 
         SqlContainer sqlContainer = new SqlContainer();
-        sqlContainer.addSql(App.class.getResourceAsStream("/flow.sql"));
+        sqlContainer.addSql(App.class.getResourceAsStream("/flow.sql")).get();
 
     }
 
@@ -105,26 +105,6 @@ public class App {
         } else {
             return executor.submit(callable);
         }
-    }
-
-    public static class SqlTask implements Callable<Void> {
-
-        private String sql;
-
-        public SqlTask(String sql) {
-            this.sql = sql;
-        }
-
-        @Override
-        public Void call() throws Exception {
-            System.out.println("Processing sql \"" + sql + "\"...");
-//            if (sql.equals("B")) {
-//                throw new Exception("Fail to process sql B.");
-//            }
-            Thread.sleep(2000);
-            return null;
-        }
-
     }
 
 }
