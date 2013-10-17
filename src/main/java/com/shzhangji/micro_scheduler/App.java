@@ -17,10 +17,11 @@ import com.google.common.util.concurrent.MoreExecutors;
 public class App {
 
     public static void main(String[] args) throws Exception {
-        methodA();
-        methodB();
-        methodC();
-        methodD();
+//        methodA();
+//        methodB();
+//        methodC();
+//        methodD();
+        methodE();
     }
 
     /**
@@ -78,6 +79,13 @@ public class App {
         ListenableFuture<Void> futureC = newTask(new SqlTask("C"), executor);
         ListenableFuture<Void> futureD = newTask(new SqlTask("D"), executor, futureB, futureC);
         futureD.get();
+
+    }
+
+    public static void methodE() throws Exception {
+
+        SqlContainer sqlContainer = new SqlContainer();
+        sqlContainer.addSql(App.class.getResourceAsStream("/flow.sql"));
 
     }
 
