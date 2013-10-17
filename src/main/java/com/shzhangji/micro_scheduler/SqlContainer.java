@@ -8,14 +8,23 @@ import java.util.concurrent.Future;
 
 public class SqlContainer extends Container<Void> {
 
-    public Future<Void> addSql(InputStream in) {
+    private static final String msPrefix = "-- ms: ";
+
+    public Future<Void> addSql(InputStream in) throws Exception {
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+        StringBuilder sql = new StringBuilder();
+        String line, prefix;
+        while ((line = reader.readLine()) != null) {
 
-        try {
-            System.out.println(reader.readLine());
-        } catch (IOException e) {
-            e.printStackTrace();
+            if (line.startsWith(msPrefix)) {
+
+                if (sql.length() > 0) {
+
+                }
+
+            }
+
         }
 
         return null;
