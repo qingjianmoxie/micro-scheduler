@@ -21,7 +21,7 @@ public class SqlContainer extends Container<Void> {
             if (line.startsWith(msPrefix)) {
 
                 if (prefix != null && sql.length() > 0) {
-                    future = addSqlInternal(prefix, sql.toString());
+                    future = addSqlInternal(prefix, sql.toString().trim());
                 }
 
                 prefix = line;
@@ -34,7 +34,7 @@ public class SqlContainer extends Container<Void> {
         }
 
         if (prefix != null && sql.length() > 0) {
-            future = addSqlInternal(prefix, sql.toString());
+            future = addSqlInternal(prefix, sql.toString().trim());
         }
 
         return future;
